@@ -1,5 +1,14 @@
 import { useState } from "react";
 import { generateRoadmap } from "../api/roadmapApi";
+import RoadmapLoading from "./RoadmapLoading";
+
+const MIN_LOADING_TIME_MS = 1200;
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 export default function InputForm({ setRoadmap }) {
   const [formData, setFormData] = useState({
@@ -9,6 +18,7 @@ export default function InputForm({ setRoadmap }) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   function handleChange(e) {
     setFormData({
@@ -19,9 +29,11 @@ export default function InputForm({ setRoadmap }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const loadingStartedAt = Date.now();
 
     try {
       setLoading(true);
+      setErrorMessage("");
       setRoadmap(null); // Clear previous output on new submission
 
       const data = await generateRoadmap({
@@ -30,13 +42,34 @@ export default function InputForm({ setRoadmap }) {
         hours_per_week: Number(formData.hours_per_week)
       });
 
+      const elapsed = Date.now() - loadingStartedAt;
+      if (elapsed < MIN_LOADING_TIME_MS) {
+        await wait(MIN_LOADING_TIME_MS - elapsed);
+      }
+
       setRoadmap(data);
     } catch (error) {
-      console.error(error);
-      alert("Failed to generate roadmap. Please make sure Ollama is running.");
+      const elapsed = Date.now() - loadingStartedAt;
+      if (elapsed < MIN_LOADING_TIME_MS) {
+        await wait(MIN_LOADING_TIME_MS - elapsed);
+      }
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate roadmap. Please make sure the backend is running."
+      );
     } finally {
       setLoading(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="glass-card animated-fade-in">
+        <RoadmapLoading />
+      </div>
+    );
   }
 
   return (
@@ -46,6 +79,12 @@ export default function InputForm({ setRoadmap }) {
         <p style={{ color: "#94a3b8", fontSize: "0.95rem", marginBottom: "0.5rem" }}>
           Provide details about your objectives, current skill level, and schedule to build your tailored learning path.
         </p>
+
+        {errorMessage && (
+          <div className="form-error" role="alert">
+            {errorMessage}
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="goal">Goal / Career Objective</label>
@@ -91,14 +130,7 @@ export default function InputForm({ setRoadmap }) {
         </div>
 
         <button type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <div className="spinner"></div>
-              <span>Crafting path...</span>
-            </>
-          ) : (
-            "Generate Personal Roadmap"
-          )}
+          Generate Personal Roadmap
         </button>
       </form>
     </div>

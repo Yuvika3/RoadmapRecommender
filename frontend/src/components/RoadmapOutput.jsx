@@ -1,14 +1,44 @@
+import { useState } from "react";
+
 export default function RoadmapOutput({ roadmap }) {
+  const [checkedTasks, setCheckedTasks] = useState(() => {
+    if (roadmap && roadmap.id) {
+      const saved = localStorage.getItem(`roadmap_tasks_${roadmap.id}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return {};
+        }
+      }
+    }
+    return {};
+  });
+
   if (!roadmap) return null;
 
-  // Map source to display text and badge class
-  const sourceMap = {
-    ollama: { text: "AI Optimized", className: "badge badge-ollama" },
-    ollama_fallback: { text: "AI Formatted Fallback", className: "badge badge-ollama-fallback" },
-    fallback: { text: "Rule-Based Fallback", className: "badge badge-fallback" }
+  // Handle checkbox changes
+  const handleCheckboxChange = (week, index, isChecked) => {
+    const key = `${week}-${index}`;
+    setCheckedTasks((prev) => {
+      const updated = { ...prev, [key]: isChecked };
+      if (roadmap && roadmap.id) {
+        localStorage.setItem(`roadmap_tasks_${roadmap.id}`, JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
-  const currentSource = sourceMap[roadmap.source] || { text: roadmap.source, className: "badge" };
+  // Calculate percentage of tasks completed
+  const totalTasks = roadmap.roadmap
+    ? Object.values(roadmap.roadmap).reduce((sum, tasks) => sum + tasks.length, 0)
+    : 0;
+
+  const completedTasks = Object.keys(checkedTasks).filter(
+    (key) => checkedTasks[key]
+  ).length;
+
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
     <div className="animated-fade-in" style={{ marginTop: "1rem" }}>
@@ -18,26 +48,39 @@ export default function RoadmapOutput({ roadmap }) {
           justifyContent: "space-between", 
           alignItems: "center", 
           flexWrap: "wrap", 
-          gap: "10px", 
+          gap: "15px", 
           marginBottom: "1.5rem", 
           borderBottom: "1px solid rgba(255, 255, 255, 0.08)", 
-          paddingBottom: "1rem" 
+          paddingBottom: "1.5rem" 
         }}>
-          <h2 style={{ marginBottom: 0 }}>Your Learning Roadmap</h2>
-          <span className={currentSource.className}>{currentSource.text}</span>
+          <h2 style={{ marginBottom: 0, fontSize: "2rem", textTransform: "capitalize" }}>
+            {roadmap.goal}
+          </h2>
+          
+          {totalTasks > 0 && (
+            <div className="progress-badge">
+              <span className="progress-label">Progress: {completionRate}%</span>
+              <div className="mini-progress-bg">
+                <div 
+                  className="mini-progress-fill" 
+                  style={{ width: `${completionRate}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
 
         {roadmap.explanation && (
           <div className="explanation-card animated-fade-in">
-            <h4 style={{ color: "#a5b4fc", fontSize: "0.95rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
-              Advisor Tips & Strategy
+            <h4 style={{ color: "var(--accent)", fontSize: "0.95rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
+              Curriculum Overview & Strategy
             </h4>
             <p>{roadmap.explanation}</p>
           </div>
         )}
 
         {roadmap.scores && (
-          <div style={{ marginTop: "2rem" }}>
+          <div style={{ marginTop: "2.5rem" }}>
             <h3 style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)", paddingBottom: "0.5rem" }}>
               Skill Metrics Profile
             </h3>
@@ -93,7 +136,7 @@ export default function RoadmapOutput({ roadmap }) {
         )}
 
         {roadmap.roadmap && (
-          <div style={{ marginTop: "2rem" }}>
+          <div style={{ marginTop: "2.5rem" }}>
             <h3 style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)", paddingBottom: "0.5rem", marginBottom: "1.5rem" }}>
               Weekly Study Plan
             </h3>
@@ -104,18 +147,24 @@ export default function RoadmapOutput({ roadmap }) {
                     <span className="week-badge">{week}</span>
                   </h4>
                   <ul className="task-list">
-                    {tasks.map((task, index) => (
-                      <li key={index} className="task-item">
-                        <input
-                          type="checkbox"
-                          className="task-checkbox"
-                          id={`task-${week}-${index}`}
-                        />
-                        <label className="task-text" htmlFor={`task-${week}-${index}`}>
-                          {task}
-                        </label>
-                      </li>
-                    ))}
+                    {tasks.map((task, index) => {
+                      const key = `${week}-${index}`;
+                      const isChecked = !!checkedTasks[key];
+                      return (
+                        <li key={index} className="task-item">
+                          <input
+                            type="checkbox"
+                            className="task-checkbox"
+                            id={`task-${week}-${index}`}
+                            checked={isChecked}
+                            onChange={(e) => handleCheckboxChange(week, index, e.target.checked)}
+                          />
+                          <label className="task-text" htmlFor={`task-${week}-${index}`}>
+                            {task}
+                          </label>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}

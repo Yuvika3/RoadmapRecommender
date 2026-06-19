@@ -3,6 +3,9 @@ from unittest.mock import patch
 import sys
 import os
 
+# Set testing environment variable BEFORE importing app modules
+os.environ["TESTING"] = "1"
+
 # Add backend directory to sys.path so we can import app modules
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "backend"))
 if backend_path not in sys.path:
@@ -89,9 +92,20 @@ class TestApiFlow(unittest.TestCase):
 
         # Assertions
         self.assertEqual(response["source"], "fallback")
-        # Raw fallback translates keys
         self.assertEqual(response["roadmap"], {"Week 1": ["python"]})
-        self.assertIn("Generated rule-based roadmap due to Ollama formatting issue", response["explanation"])
+        self.assertIn("curated learning plan is tailored to guide you", response["explanation"])
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up test database file if it exists
+        from app.db.session import get_db_path
+        db_path = get_db_path()
+        if os.path.exists(db_path) and "test_roadmap.db" in db_path:
+            try:
+                os.remove(db_path)
+            except Exception as e:
+                print(f"Failed to remove test database: {e}")
+
 
 if __name__ == "__main__":
     unittest.main()

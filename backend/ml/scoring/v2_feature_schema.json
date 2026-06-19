@@ -1,0 +1,47 @@
+{
+  "version": "2.0",
+  "all_features": [
+    "skill_category",
+    "is_core_skill",
+    "skill_current_usage_pct",
+    "skill_future_interest_pct",
+    "prerequisite_count",
+    "difficulty_estimate",
+    "avg_learning_time_hours",
+    "skill_market_demand",
+    "weekly_hours_available",
+    "target_role_match_score",
+    "weeks_to_complete",
+    "demand_x_role",
+    "prereq_x_difficulty"
+  ],
+  "categorical_features": [
+    "skill_category",
+    "is_core_skill",
+    "skill_current_usage_pct",
+    "skill_future_interest_pct"
+  ],
+  "numerical_features": [
+    "prerequisite_count",
+    "difficulty_estimate",
+    "avg_learning_time_hours",
+    "skill_market_demand",
+    "weekly_hours_available",
+    "target_role_match_score",
+    "weeks_to_complete",
+    "demand_x_role",
+    "prereq_x_difficulty"
+  ],
+  "skill_category_values": [
+    "Backend",
+    "Cloud",
+    "Database",
+    "DevOps",
+    "Frontend",
+    "Programming"
+  ],
+  "notes": {
+    "skill_name": "REMOVED \u2014 model works for any skill",
+    "skill_category": "broad domain bucket \u2014 user supplies this (e.g. 'Data', 'Cloud')"
+  }
+}
